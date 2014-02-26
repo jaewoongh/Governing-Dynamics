@@ -31,7 +31,7 @@ v:x   : assign the result of the match x to the variable v
   subtraction           = '-' ' '* n:((block/number)+ ' '*)+ { return n.length>1?(function subAllInN(i){return i>0 ? subAllInN(i-1)-parseFloat(n[i]) : parseFloat(n[i])})(n.length-1):-1*parseFloat(n[0]); }
   multiplication        = '*' ' '* n:((block/number)+ ' '*)+ { return (function multAllInN(i){return i>0 ? multAllInN(i-1)*parseFloat(n[i]) : parseFloat(n[i])})(n.length-1); }
   division              = '/' ' '* n:((block/number)+ ' '*)+ { return n.length>1?(function divAllInN(i){return i>0 ? divAllInN(i-1)/parseFloat(n[i]) : parseFloat(n[i])})(n.length-1):1/parseFloat(n[0]); }
-  common_sense          = s:[abcdefghijklmnopqrstuvwxyz]+ { switch(s.join('')) { case 'beer': return 'awesome'; case 'wine': return 'nice'; case 'whisky': return 'sweet'; case 'soju': 'ooyeah'; } }
+  common_sense          = s:[abcdefghijklmnopqrstuvwxyz]+ { switch(s.join('')) { case 'beer': return 'awesome'; case 'wine': return 'nice'; case 'whisky': return 'sweet'; case 'soju': return 'ooyeah'; } }
 </grammar>
 
 <h2>Numbers and Basic Arithmetic</h2>
