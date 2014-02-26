@@ -20,18 +20,18 @@ v:x   : assign the result of the match x to the variable v
 -->
 
 <grammar>
-  start       			= block/number/common_sense
-  block 				= '(' ' '* r:(basic_arithmetic/number) ' '* ')' { return r; }
-  number				= decimal/integer
-  integer 				= m:('-'/'+')? d:digit+ { return (m=='-'?-1:1)*parseInt(d.join('')); }
-  decimal 				= m:('-'/'+')? i:digit* '.' d:digit+ { return (m=='-'?-1:1)*((i.length>0?parseInt(i.join('')):0)+Math.pow(0.1,d.length)*parseInt(d.join(''))); }
-  digit       			= [0123456789]
-  basic_arithmetic		= addition/subtraction/multiplication/division
-  addition 				= '+' ' '* n:((block/number)+ ' '*)+ { return (function addAllInN(i){return i>0 ? addAllInN(i-1)+parseFloat(n[i]) : parseFloat(n[i])})(n.length-1); }
-  subtraction			= '-' ' '* n:((block/number)+ ' '*)+ { return n.length>1?(function subAllInN(i){return i>0 ? subAllInN(i-1)-parseFloat(n[i]) : parseFloat(n[i])})(n.length-1):-1*parseFloat(n[0]); }
-  multiplication		= '*' ' '* n:((block/number)+ ' '*)+ { return (function multAllInN(i){return i>0 ? multAllInN(i-1)*parseFloat(n[i]) : parseFloat(n[i])})(n.length-1); }
-  division				= '/' ' '* n:((block/number)+ ' '*)+ { return n.length>1?(function divAllInN(i){return i>0 ? divAllInN(i-1)/parseFloat(n[i]) : parseFloat(n[i])})(n.length-1):1/parseFloat(n[0]); }
-  common_sense 			= s:[abcdefghijklmnopqrstuvwxyz]+ { switch(s.join('')) { case 'beer': return 'awesome'; case 'wine': return 'nice'; case 'whisky': return 'sweet'; case 'soju': 'ooyeah'; } }
+  start                 = block/number/common_sense
+  block                 = '(' ' '* r:(basic_arithmetic/number) ' '* ')' { return r; }
+  number                = decimal/integer
+  integer               = m:('-'/'+')? d:digit+ { return (m=='-'?-1:1)*parseInt(d.join('')); }
+  decimal               = m:('-'/'+')? i:digit* '.' d:digit+ { return (m=='-'?-1:1)*((i.length>0?parseInt(i.join('')):0)+Math.pow(0.1,d.length)*parseInt(d.join(''))); }
+  digit                 = [0123456789]
+  basic_arithmetic      = addition/subtraction/multiplication/division
+  addition              = '+' ' '* n:((block/number)+ ' '*)+ { return (function addAllInN(i){return i>0 ? addAllInN(i-1)+parseFloat(n[i]) : parseFloat(n[i])})(n.length-1); }
+  subtraction           = '-' ' '* n:((block/number)+ ' '*)+ { return n.length>1?(function subAllInN(i){return i>0 ? subAllInN(i-1)-parseFloat(n[i]) : parseFloat(n[i])})(n.length-1):-1*parseFloat(n[0]); }
+  multiplication        = '*' ' '* n:((block/number)+ ' '*)+ { return (function multAllInN(i){return i>0 ? multAllInN(i-1)*parseFloat(n[i]) : parseFloat(n[i])})(n.length-1); }
+  division              = '/' ' '* n:((block/number)+ ' '*)+ { return n.length>1?(function divAllInN(i){return i>0 ? divAllInN(i-1)/parseFloat(n[i]) : parseFloat(n[i])})(n.length-1):1/parseFloat(n[0]); }
+  common_sense          = s:[abcdefghijklmnopqrstuvwxyz]+ { switch(s.join('')) { case 'beer': return 'awesome'; case 'wine': return 'nice'; case 'whisky': return 'sweet'; case 'soju': 'ooyeah'; } }
 </grammar>
 
 <h2>Numbers and Basic Arithmetic</h2>
