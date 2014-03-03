@@ -10,7 +10,7 @@
 // configuration object
 // refreshes every second by default
 var PLT = {
-  refresh: true,
+  refresh: false,
   refreshTime: 1000,
 
   parser: null

@@ -22,9 +22,9 @@ v:x   : assign the result of the match x to the variable v
 <grammar>
   start                         = value*
 
-  value                         = space v:(block / conditional / operations / boolean / number) space { return v }
+  value                         = space v:(block / conditional / operations / boolean / number / common_sense) space { return v }
 
-  block                         = '(' space val:value ')' space { return val }
+  block                         = '(' space val:value* ')' space { return eval(val.join(',')) }
 
   conditional                   = ('if' / '?') space statement:value space t:value space f:value space { return statement?t:f }
 
@@ -68,7 +68,8 @@ v:x   : assign the result of the match x to the variable v
   <!-- any space can be replaced with newline -->
   space                         = [ \n]* / !. { return undefined }
   mandatory_space               = [ \n]+ / !. { return undefined }
-  linebreak                     = '\n' { return undefined }
+
+  common_sense                  = s:[abcdefghijklmnopqrstuvwxyz]+ { switch(s.join('')) { case 'beer': case 'wine': case 'whisky': case 'soju': return true; default: return false } }
 </grammar>
 
 <h3>Homework: Comparisons</h3>
@@ -149,8 +150,9 @@ v:x   : assign the result of the match x to the variable v
 <br />
 <h3>Blocks</h3>
 <p>Block is to wrap anything or confine operations, and represents a value.<br />
-Block is the only way to separate <em>lines</em> of code, while [new line] does no such thing.</p>
-<code>(3)</code>
+Block is the only way to separate <em>lines</em> of code, while [new line] does no such thing.<br />
+If there are multiple values in a block without any expression, it returns the last value, after executing all the values sequencially.<br />
+I'm not sure yet if it'd be better to return all values in array, but for now, just the last value, like [,] operator in javascript.</p>
 <code>(/ 2)</code>
 <code>(+ 1 2 (* 3 4) 5)</code>
 <code>(= (> 5 3) (<= 3.14 (/ 22 7)))</code>
@@ -158,6 +160,12 @@ Block is the only way to separate <em>lines</em> of code, while [new line] does 
 <code>(if (if (> 9 11) t f) 5 -5)</code>
 <code>(+ 5 (if(= 1 1) 5 -5))</code>
 <code>(* 9) (+ 2 4 6)</code>
+<code>((* 9) (+ 2 4 6))</code>
+<code>()</code>
+<code>(3)</code>
+<code>(3 5 7)</code>
+<code>(3 if t 5 6)</code>
+<code bad>(3 + 5)</code>
 
 <br />
 <h3>Format Flexibilities</h3>
