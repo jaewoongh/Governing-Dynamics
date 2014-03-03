@@ -1,0 +1,190 @@
+<script src="js/sugar.js"></script>
+<script src="js/peg.js"></script>
+<script src="js/plt.js"></script>
+
+<title>Conditionals</title>
+
+<!--
+
+Full documentation: http://pegjs.majda.cz/documentation#grammar-syntax-and-semantics-parsing-expression-types
+
+'x'   : match the literal character 'x'
+[xyz] : match one of the literal character 'x', 'y', or 'z'
+x+    : match x 1 or more times
+x*    : match x 0 or more times
+x?    : match x 0 or 1 times
+!x    : match anything but the match x
+x/y   : match x or y, trying in that order
+v:x   : assign the result of the match x to the variable v
+
+-->
+
+<grammar>
+  start                         = value*
+
+  value                         = space v:(block / conditional / operations / boolean / number) space { return v }
+
+  block                         = '(' space val:value ')' space { return val }
+
+  conditional                   = ('if' / '?') space statement:value space t:value space f:value space { return statement?t:f }
+
+  operations                    = relational_operation / operation
+
+  operation                     = op:operator space args:value+ space { // Make '-1' -1, and '/2' 0.5 when there's only one argument with operator
+                                                                        if(args.length == 1) {
+                                                                          switch(op) {
+                                                                            case '-': args.unshift(0); break;
+                                                                            case '/': args.unshift(1); break;
+                                                                          }
+                                                                        }
+                                                                        return eval(args.join(op))
+                                                                      }
+  operator                      = '+' / '-' / '/' / '*'
+
+  relational_operation          = op:relational_operator space args:value+ space {  // '> 5 4 3 2 1' or '= 2 2 2' should return true
+                                                                                    for(var i = 0; i < args.length-1; i++) {
+                                                                                      if(!eval(args[i]+op+args[i+1])) return false
+                                                                                    }
+                                                                                    return true
+                                                                                 }
+  relational_operator           = op:('==' / '!=' / '>=' / '<=' / '=>' / '=<' / '<' / '>' / '=') {  // replace not-javascript-native operators into javascript-compatible ones
+                                                                                                    switch(op) {
+                                                                                                      case '=':   return '==';
+                                                                                                      case '=<':  return '<=';
+                                                                                                      case '=>':  return '>=';
+                                                                                                      default:    return op;
+                                                                                                    }
+                                                                                                 }
+
+  number                        = decimal / integer
+  integer                       = m:('-'/'+')? d:digit+ space { return (m=='-'?-1:1)*parseInt(d.join('')) }
+  decimal                       = m:('-'/'+')? i:digit* '.' d:digit+ space { return (m=='-'?-1:1)*((i.length>0?parseInt(i.join('')):0)+(Math.pow(0.1,d.length)*parseInt(d.join('')))) }
+  digit                         = [0123456789]
+
+  boolean                       = long_boolean / short_boolean
+  short_boolean                 = b:('t' / 'f') { return b=='t'?true:false }
+  long_boolean                  = b:('true' / 'false') { return b=='true'?true:false }
+
+  <!-- any space can be replaced with newline -->
+  space                         = [ \n]* / !. { return undefined }
+  mandatory_space               = [ \n]+ / !. { return undefined }
+  linebreak                     = '\n' { return undefined }
+</grammar>
+
+<h3>Homework: Comparisons</h3>
+<p><em>These should evaluate to true</em></p>
+<code>(< 18 90)</code>
+<code>(> 78 12)</code>
+<code>(= 50 50)</code>
+
+<p><em>These should evaluate to false</em></p>
+<code>(< 5 4)</code>
+<code>(> 100 200)</code>
+<code>(= 50 51)</code>
+
+<h3>Homework: Conditionals</h3>
+<p><em>This should evaluate to 5</em></p>
+<code>(if (< 0 8) 5 9)</code>
+
+<p><em>This should evaluate to 9</em></p>
+<code>(if (> 0 8) 5 9)</code>
+
+<h3>Extra: Support nesting</h3>
+<code>(if (> 0 8) (+ 5 8) (- 9 8))</code>
+<code>(if (> (+ 90 12) (+ 80 15)) (+ 5 8) (- 9 8))</code>
+
+<h3>Extra: Support formatting</h3>
+<code>
+(if (> (+ 90 12) (+ 80 15))
+  (+ 5 8)
+  (- 9 8))</code>
+
+<code>
+(if 
+  (>
+    (+ 90 12)
+    (+ 80 15))
+  (+ 5 8)
+  (- 9 8))</code>
+
+<br /><br />
+<h2>GRAMMAR SO FAR</h2>
+
+<h3>Number</h3>
+<p>Any real numbers</p>
+<code>2014</code>
+<code>3.1415926</code>
+<code>-19.86</code>
+<code>-.5</code>
+
+<br />
+<h3>Boolean</h3>
+<p>Can use both long and short names</p>
+<code>true</code>
+<code>t</code>
+<code>false</code>
+<code>f</code>
+
+<br />
+<h3>Basic Arithmetic</h3>
+<p>Can deal with multiple numbers with one operator</p>
+<code>+ 3 5</code>
+<code>- 10 5 3 1</code>
+<code>* 5 -.1</code>
+<code>/ 5 2 2</code>
+
+<br />
+<h3>Comparison</h3>
+<p>Can compare multiple values with one operator</p>
+<code>= 2 2</code>
+<code>>= 5 2 2 1</code>
+<code>!= 3 3 3</code>
+
+<br />
+<h3>Conditional</h3>
+<p>if/? <em>[statement] [return-value-when-true] [return-value-when-false]</em></p>
+<code>if true 5 3</code>
+<code>? false 5 3</code>
+
+<br />
+<h3>Blocks</h3>
+<p>Block is to wrap anything or confine operations, and represents a value.<br />
+Block is the only way to separate <em>lines</em> of code, while [new line] does no such thing.</p>
+<code>(3)</code>
+<code>(/ 2)</code>
+<code>(+ 1 2 (* 3 4) 5)</code>
+<code>(= (> 5 3) (<= 3.14 (/ 22 7)))</code>
+<code>(if (<= 1 1 2 3 5 8 13 21) 5 -5)</code>
+<code>(if (if (> 9 11) t f) 5 -5)</code>
+<code>(+ 5 (if(= 1 1) 5 -5))</code>
+<code>(* 9) (+ 2 4 6)</code>
+
+<br />
+<h3>Format Flexibilities</h3>
+<p>[Space] is to separate values, though not necessary.<br />
+Series of numbers can only be distinguished by [space].<br />
+Any [space] can be multiple.<br />
+Any [space] can be replaced with [new line].</p>
+<code>+5 if(=1 1)5 -5</code>
+<code>if(=1 1)(/2)(*2)</code>
+<code>(-5(*2 4))</code>
+<code>(    *   2      3      )</code>
+<code>*.1 (/2)</code>
+<code>/
+10
+2
+</code>
+<code>(+ 5
+  (* 2 3)
+  ? (= 1 2)
+    10
+    -10
+)</code>
+<code>+ 2 ? t 1 2 3 4</code>
+<code>+ 2 ? f 1 2 3 4</code>
+
+<br />
+<h3>Known Issue</h3>
+<p>Floating point number shows error</p>
+<code>0.02</code>
+<code>-0.99833</code>
