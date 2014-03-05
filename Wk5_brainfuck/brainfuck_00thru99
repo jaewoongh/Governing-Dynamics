@@ -1,0 +1,29 @@
+MAKE '00\n' AFTER TWO EMPTY SPACES FOR LOOPING
++++++ ++
+[
+  >
+  > +++++ ++
+  > +++++ ++
+  > ++
+  <<<< -
+]
+>> -
+> -
+> -
+
+LOOP THROUGH 99
+OUTTER LOOP IS FOR TENS NUMBER
+AND INNER LOOP IS FOR ONES NUMBER
+<<<< +++++ +++++
+[
+  > +++++ +++++
+  [
+    > .
+    > . +
+    > .
+    <<< -
+  ]
+  > +
+  > ----- -----
+  <<< -
+]
