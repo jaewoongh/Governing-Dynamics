@@ -1,0 +1,338 @@
+<script src="js/sugar.js"></script>
+<script src="js/peg.js"></script>
+<script src="js/plt.js"></script>
+
+<title>MiniLisp J</title>
+
+<script type="text/javascript">
+
+  var MiniLisp = {
+
+    /********************************
+    *  Eval, Lookup                 *
+    ********************************/
+
+    // Evaluate the argument and do relevant job
+    // Not only direct parsed input comes here, but every value in the middle of operations also comes
+    // When the argument is not an array, just return the value; if it is, do some work with the array
+    // By doing this, nested things can be worked good
+    eval: function(parsed_array) {
+      if(parsed_array.length < 1) return 'This is nothing, for real';
+
+      // If an argument is not an array, just return the value
+      if(!(parsed_array instanceof Array)) {
+        return parsed_array;
+      }
+
+      // If an argument is an array, it should be an operation or something, so do the job
+      var result;
+      if(parsed_array[0] instanceof Array) {
+        // I don't know why but most of input comes like [['+', 3, 5]], not ['+', 3, 5], so deal with it
+        result = this.lookup(parsed_array[0][0])(parsed_array[0]);
+      } else {
+        result = this.lookup(parsed_array[0])(parsed_array);
+      }
+      return result;
+    },
+
+    // Lookup for Dictionary, and return matching function
+    lookup: function(word) {
+      for(var i = 0; i < entries.length; i++) {
+        // An entry can be an array, meaning that many words are supported by one actual function
+        if(entries[i].entry instanceof Array) {
+          for(var j = 0; j < entries[i].entry.length; j++) {
+            if(entries[i].entry[j] == word) {
+              return entries[i].fn;
+            }
+          }
+        } else {
+          if(entries[i].entry == word) {
+            return entries[i].fn;
+          }
+        }
+      }
+
+      // If there's no such thing on Dictionary, return error throwing function
+      return function(){ return 'Oops, never expected -> ' + word + ' <- would show up!' };
+    },
+
+
+    /********************************
+    *  Basic Arithmetic             *
+    ********************************/
+
+    // Basic arithmetic addition
+    add: function(args) {
+      args.shift(); // Cut-off operator
+      var val = 0;  // When you're adding, you're adding on top of 0
+      for(var i = 0; i < args.length; i++) val += MiniLisp.eval(args[i]);
+      return val;
+    },
+
+    // Basic arithmetic multiplication
+    mult: function(args) {
+      args.shift(); // Cut-off operator
+      var val = 1;  // When you're multiplying, you're multiplying out of 1
+      for(var i = 0; i < args.length; i++) val *= MiniLisp.eval(args[i]);
+      return val;
+    },
+
+    // Basic arithmetic subtraction
+    sub: function(args) {
+      args.shift(); // Cut-off operator
+      if(args.length == 1) {
+        // If '-' operation has only one argument, it's meant to be subtracted from 0
+        return -MiniLisp.eval(args[0]);
+      } else {
+        // If '-' operation has two or more argument, the first value is what rest of values subtract from
+        var val = MiniLisp.eval(args[0]);
+        for(var i = 1; i < args.length; i++) val -= MiniLisp.eval(args[i]);
+        return val;
+      }
+    },
+
+    // Basic arithmetic division
+    div: function(args) {
+      args.shift(); // Cut-off operator
+      var val;
+      if(args.length == 1) {
+        // If '/' operation has only one argument, it's meant to be divided from 1
+        if(MiniLisp.eval(args[0]) == 0) return 'Dividing by 0 blew my CPU!';
+        return 1/MiniLisp.eval(args[0]);
+      } else {
+        // If '/' operation has two or more argument, the first value is what rest of values divide
+        var val = MiniLisp.eval(args[0]);
+        for(var i = 1; i < args.length; i++) {
+          if(MiniLisp.eval(args[i]) == 0) {
+            // You cannot divide anything by 0
+            return 'Dividing by 0 blew my CPU!';
+          } else {
+            val /= MiniLisp.eval(args[i]);
+          }
+        }
+        return val;
+      }
+    },
+
+
+    /********************************
+    *  Relational Operation         *
+    ********************************/
+
+    // Relational operation, all in one, returns true or false
+    comparisons: function(args) {
+      // Replace not-javascript-native operators into javascript-compatible ones
+      var op;
+      switch(args[0]) {
+        case '=':   op = '=='; break;
+        case '=<':  op = '<='; break;
+        case '=>':  op = '>='; break;
+        default:    op = args[0];
+      }
+      args.shift(); // Discard operator
+
+      // '> 5 4 3 2 1' or '= 2 2 2' should return true
+      for(var i = 0; i < args.length-1; i++) {
+        if(!eval(MiniLisp.eval(args[i])+op+MiniLisp.eval(args[i+1]))) return false;
+      }
+      return true;
+    },
+
+
+    /********************************
+    *  Conditionals                 *
+    ********************************/
+
+    // Basic if-statement; [if/?] [true/false] [return when true] [return when false]
+    conditional: function(args) {
+      args.shift(); // Discard operator
+
+      // Exact three relevant arguments are needed
+      if(args.length < 3)       return 'Need more arguments for \'if/?\'';
+      else if(args.length > 3)  return 'Too many arguments for \'if/?\'';
+      else {
+        var torf = MiniLisp.eval(args[0])
+        if(typeof torf != 'boolean') {
+          return '\'If/?\' needs something to tell true or false';
+        } else {
+          if(torf) return MiniLisp.eval(args[1]); else return MiniLisp.eval(args[2]);
+        }
+      }
+    }
+  };
+
+  // Dictionary
+  var entries = [
+    { 'entry': '+',                                                 'fn': MiniLisp.add          },
+    { 'entry': '-',                                                 'fn': MiniLisp.sub          },
+    { 'entry': '*',                                                 'fn': MiniLisp.mult         },
+    { 'entry': '/',                                                 'fn': MiniLisp.div          },
+    { 'entry': ['==', '!=', '>=', '<=', '=>', '=<', '<', '>', '='], 'fn': MiniLisp.comparisons  },
+    { 'entry': ['?', 'if'],                                         'fn': MiniLisp.conditional  }
+  ];
+</script>
+
+<!--
+
+Full documentation: http://pegjs.majda.cz/documentation#grammar-syntax-and-semantics-parsing-expression-types
+
+'x'   : match the literal character 'x'
+[xyz] : match one of the literal character 'x', 'y', or 'z'
+x+    : match x 1 or more times
+x*    : match x 0 or more times
+x?    : match x 0 or 1 times
+!x    : match anything but the match x
+x/y   : match x or y, trying in that order
+v:x   : assign the result of the match x to the variable v
+
+-->
+
+<grammar>
+  start                         = v:value* {
+                                    // If there're multiple values, return it as an array; otherwise, just return the first value
+                                    // Do nothing for now, but would do something if things go multiline, or multiblock in this case
+                                    return v.length > 1 ? (function parseOn(n) {
+                                      return n > 0 ? parseOn(n-1) + '\n' + MiniLisp.eval(v[n]) :  MiniLisp.eval(v[n])
+                                    })(v.length-1).split('\n') : MiniLisp.eval(v[0])
+  }
+
+  value                         = space v:(block / conditional / operations / boolean / number) space { return v }
+  block                         = '(' space val:value* ')' space { return val }
+
+  conditional                   = ('if' / '?') space statement:value space t:value space f:value space { return ['?', statement, t, f] }
+
+  operations                    = relational_operation / operation
+  operation                     = op:operator space args:value+ space { return [op].concat(args) }
+  operator                      = '+' / '-' / '/' / '*'
+  relational_operation          = op:relational_operator space args:value+ space { return [op].concat(args) }
+  relational_operator           = '==' / '!=' / '>=' / '<=' / '=>' / '=<' / '<' / '>' / '='
+
+  number                        = decimal / integer
+  integer                       = m:('-'/'+')? d:digit+ space { return (m=='-'?-1:1)*parseInt(d.join('')) }
+  decimal                       = m:('-'/'+')? i:digit* '.' d:digit+ space { return (m=='-'?-1:1)*parseFloat([i?i.join(''):'0', d.join('')].join('.')) }
+  digit                         = [0123456789]
+
+  boolean                       = long_boolean / short_boolean
+  short_boolean                 = b:('t' / 'f') { return b=='t'?true:false }
+  long_boolean                  = b:('true' / 'false') { return b=='true'?true:false }
+
+  <!-- any space can be replaced with newline -->
+  space                         = [ \n]* / !. { return undefined }
+  mandatory_space               = [ \n]+ / !. { return undefined }
+
+  common_sense                  = s:[abcdefghijklmnopqrstuvwxyz]+ { switch(s.join('')) { case 'beer': case 'wine': case 'whisky': case 'soju': return true; default: return false } }
+</grammar>
+
+<h3>These parse into Arrays and MiniLisp.eval evaluates them</h3>
+<code>(+ 1 2)</code>
+<code>(+ 7 13)</code>
+
+<h3>Homework: Make the other operators work</h3>
+<code>(- 1 2)</code>
+<code>(- 7 13)</code>
+<code>(* 1 2)</code>
+<code>(* 7 13)</code>
+<code>(/ 1 2)</code>
+<code>(/ 7 13)</code>
+
+<h3>Homework: Make nesting work</h3>
+<code>(+ 7 (+ 30 5))</code>
+<code>(- 100 (+ 29 29))</code>
+
+<h3>Extra: Make multiple arguments work</h3>
+<code>(+ 20 20 30 40 50)</code>
+<code>(* (- 10 5) (+ 20 20 30 40 50))</code>
+
+<h3>Extra: Make comparisons work</h3>
+<p><em>These should evaluate to true</em></p>
+<code>(< 18 90)</code>
+<code>(> 78 12)</code>
+<code>(= 50 50)</code>
+
+<p><em>These should evaluate to false</em></p>
+<code>(< 5 4)</code>
+<code>(> 100 200)</code>
+<code>(= 50 51)</code>
+
+<h3>Extra: Make conditionals work</h3>
+<p><em>This should evaluate to 5</em></p>
+<code>(if (< 0 8) 5 9)</code>
+
+<p><em>This should evaluate to 9</em></p>
+<code>(if (> 0 8) 5 9)</code>
+
+
+<br /><br />
+<h2>GRAMMAR SO FAR</h2>
+
+<h3>Number</h3>
+<p>Any real numbers</p>
+<code>2014</code>
+<code>3.1415926</code>
+<code>-19.86</code>
+<code>-.5</code>
+
+<br />
+<h3>Boolean</h3>
+<p>Can use both long and short names</p>
+<code>true</code>
+<code>t</code>
+<code>false</code>
+<code>f</code>
+
+<br />
+<h3>Basic Arithmetic</h3>
+<p>Can deal with multiple numbers with one operator</p>
+<code>+ 3 5</code>
+<code>- 10 5 3 1</code>
+<code>* 5 -.1</code>
+<code>/ 5 2 2</code>
+
+<br />
+<h3>Comparison</h3>
+<p>Can compare multiple values with one operator</p>
+<code>= 2 2</code>
+<code>>= 5 2 2 1</code>
+<code>!= 3 3 3</code>
+
+<br />
+<h3>Conditional</h3>
+<p>if/? <em>[statement] [return-value-when-true] [return-value-when-false]</em></p>
+<code>if true 5 3</code>
+<code>? false 5 3</code>
+
+<br />
+<h3>Blocks</h3>
+<p>Block is to confine operation.<br />
+Block is the only way to separate <em>lines</em> of code, while [new line] does no such thing.</p>
+<code>(/ 2)</code>
+<code>(+ 1 2 (* 3 4) 5)</code>
+<code>(= (> 5 3) (<= 3.14 (/ 22 7)))</code>
+<code>(if (<= 1 1 2 3 5 8 13 21) 5 -5)</code>
+<code>(if (if (> 9 11) t f) 5 -5)</code>
+<code>(+ 5 (if(= 1 1) 5 -5))</code>
+<code>(* 9) (+ 2 4 6)</code>
+
+<br />
+<h3>Format Flexibilities</h3>
+<p>[Space] is to separate values, though not necessary.<br />
+Series of numbers can only be distinguished by [space].<br />
+Any [space] can be multiple.<br />
+Any [space] can be replaced with [new line].</p>
+<code>+5 if(=1 1)5 -5</code>
+<code>if(=1 1)(/2)(*2)</code>
+<code>(-5(*2 4))</code>
+<code>(    *   2      3      )</code>
+<code>*.1 (/2)</code>
+<code>/
+10
+2
+</code>
+<code>(+ 5
+  (* 2 3)
+  ? (= 1 2)
+    10
+    -10
+)</code>
+<code>+ 2 ? t 1 2 3 4</code>
+<code>+ 2 ? f 1 2 3 4</code>
