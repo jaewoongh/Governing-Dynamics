@@ -26,12 +26,7 @@
 
       // If an argument is an array, it should be an operation or something, so do the job
       var result;
-      // if(parsed_array[0] instanceof Array) {
-      //   // I don't know why but most of input comes like [['+', 3, 5]], not ['+', 3, 5], so deal with it
-      //   result = this.lookup(parsed_array[0][0])(parsed_array[0]);
-      // } else {
-        result = this.lookup(parsed_array[0])(parsed_array);
-      // }
+      result = this.lookup(parsed_array[0])(parsed_array);
       return result;
     },
 
