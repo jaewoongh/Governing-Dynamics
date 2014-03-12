@@ -26,12 +26,12 @@
 
       // If an argument is an array, it should be an operation or something, so do the job
       var result;
-      if(parsed_array[0] instanceof Array) {
-        // I don't know why but most of input comes like [['+', 3, 5]], not ['+', 3, 5], so deal with it
-        result = this.lookup(parsed_array[0][0])(parsed_array[0]);
-      } else {
+      // if(parsed_array[0] instanceof Array) {
+      //   // I don't know why but most of input comes like [['+', 3, 5]], not ['+', 3, 5], so deal with it
+      //   result = this.lookup(parsed_array[0][0])(parsed_array[0]);
+      // } else {
         result = this.lookup(parsed_array[0])(parsed_array);
-      }
+      // }
       return result;
     },
 
@@ -161,7 +161,11 @@
     }
   };
 
-  // Dictionary
+
+  /********************************
+  *  Dictionary                   *
+  ********************************/
+
   var entries = [
     { 'entry': '+',                                                 'fn': MiniLisp.add          },
     { 'entry': '-',                                                 'fn': MiniLisp.sub          },
@@ -194,10 +198,10 @@ v:x   : assign the result of the match x to the variable v
                                     return v.length > 1 ? (function parseOn(n) {
                                       return n > 0 ? parseOn(n-1) + '\n' + MiniLisp.eval(v[n]) :  MiniLisp.eval(v[n])
                                     })(v.length-1).split('\n') : MiniLisp.eval(v[0])
-  }
+                                  }
 
   value                         = space v:(block / conditional / operations / boolean / number) space { return v }
-  block                         = '(' space val:value* ')' space { return val }
+  block                         = '(' space val:value* ')' space { return val[1] ? val : val[0] }   // Discard meaninglessly wrapping array if there is
 
   conditional                   = ('if' / '?') space statement:value space t:value space f:value space { return ['?', statement, t, f] }
 
