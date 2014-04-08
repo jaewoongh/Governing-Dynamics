@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset = "UTF-8">
+		<script src = "js/peg.js"></script>
+	</head>
+
+	<grammar>
+		start				= words:anything+ '\n'		{ return Mindstack.eval(words) }
+		anything		= a:[^ \n]+ space					{ return a.join('') }
+		space				= [ ]*
+	</grammar>
+</html>

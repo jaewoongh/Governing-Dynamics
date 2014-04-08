@@ -1,0 +1,193 @@
+<script src="js/jquery.js"></script>
+<script src="js/jqconsole.js"></script>
+<script src="js/sugar.js"></script>
+<script src="js/peg.js"></script>
+<script src="js/plt.js"></script>
+
+<script type="text/javascript">
+	// PLT.refresh = true
+
+	var Munch = {
+		dictionary: {
+			'def':		function(stack) {
+									var originalStack = stack.clone();
+									var name = stack.pop();
+									var value = stack.pop();
+									if(name && value === undefined) throw new Error('Not enough things in stack for "def": ' + originalStack);
+									Munch.dictionary[name] = function(stack) { return Munch.eval(value, stack); }
+									return stack;
+			},
+
+			'dup':		function(stack) {
+									var originalStack = stack.clone();
+									var one = stack.pop();
+									if(one === undefined) throw new Error('Not enough things in stack for "dup": ' + originalStack);
+									stack.push(one);
+									stack.push(one);
+									return stack;
+			},
+
+			'if':			function(stack) {
+									var originalStack = stack.clone();
+									var quot = stack.pop();
+									var num = stack.pop();
+									if(quot && num === undefined) throw new Error('Not enough things in stack for "if": ' + originalStack);
+									if(num !== 0) {
+										Munch.eval(quot, stack);
+									}
+									return stack;
+			},
+
+			'pop':		function(stack) {
+									var originalStack = stack.clone();
+									var thing = stack.pop();
+									if(thing === undefined) throw new Error('Not enough things in stack for "pop": ' + originalStack);
+									return stack;
+			},
+
+			'stack':	function(stack) {
+									return stack;
+			},
+
+			'+':			function(stack) {
+									var originalStack = stack.clone();
+									var a = stack.pop();
+									var b = stack.pop();
+									if(a && b === undefined) throw new Error('Not enough things in stack for "+": ' + originalStack);
+									stack.push(a + b);
+									return stack;
+			},
+
+			'-':			function(stack) {
+									var originalStack = stack.clone();
+									var a = stack.pop();
+									var b = stack.pop();
+									if(a && b === undefined) throw new Error('Not enough things in stack for "+": ' + originalStack);
+									stack.push(a - b);
+									return stack;
+			},
+
+			'*':			function(stack) {
+									var originalStack = stack.clone();
+									var a = stack.pop();
+									var b = stack.pop();
+									if(a && b === undefined) throw new Error('Not enough things in stack for "*": ' + originalStack);
+									stack.push(a * b);
+									return stack;
+			},
+
+			'/':			function(stack) {
+									var originalStack = stack.clone();
+									var a = stack.pop();
+									var b = stack.pop();
+									if(a && b === undefined) throw new Error('Not enough things in stack for "*": ' + originalStack);
+									stack.push(a / b);
+									return stack;
+			}
+		},
+
+		eval: function(source, initialStack) {
+			var stack = initialStack ? initialStack : [];
+			if(!(source instanceof Array)) source = [source];
+
+			var one;
+			for(var i = 0; i < source.length; i++) {
+				one = source[i];
+				if(!one.word) {
+					stack.push(source[i]);
+				} else {
+					var fn = Munch.dictionary[one.word];
+					if(fn) stack = fn(stack.clone());
+					else throw new Error('Unknown word "' + one.word + '"');
+				}
+			}
+			return stack;
+		}
+	}
+</script>
+
+<title>Munch</title>
+
+<grammar>
+	start							= p:program+														{ return Munch.eval(p) }
+	program						= literal / quotation / word
+	quotation					= '[' space q:program+ space ']' space	{ return q }
+
+	word							= w:[^ \[\]]+ space											{ return {word: w.join('')} }
+
+	literal						= string / shortstring / number
+		string					= '"' s:[^"\[\]]* '"'	space								{ return s.join('') }
+		shortstring			= '\'' s:[^/'\[\] ]* space								{ return s.join('') }
+		number					= real / integer
+			integer				= s:'-'? d:digit+ space									{ return parseInt(s + d.join('')) }
+			real					= s:'-'? i:digit* '.' f:digit+ space		{ return parseFloat(s + i.join('') + '.' + f.join('')) }
+
+	digit							= [0123456789]
+	space							= ' '*
+	SPACE							= ' '+ / !.
+</grammar>
+
+<h4>nom nom..</h4>
+
+<br />
+<h3>Literals</h3>
+<p>Numbers and texts that literally mean itself (&#8660;<em>words</em>)</p>
+<code>5</code>
+<code>3.1415926</code>
+<code>'whatever</code>
+<code>"whatever whatever"</code>
+<code>'multiple 'literals "stack up" 1 2 3 4 5</code>
+
+<br />
+<h3>Basic Arithmetic</h3>
+<code>1 2 +</code>
+<code>1 2 3 4 5 * * * *</code>
+
+<br />
+<h3>Quotation</h3>
+<p>Anything in between <em>[</em> and <em>]</em> is pushed into the stack not being executed right away</p>
+<code>[3 4 +]</code>
+<code>['man 'in 'fridge]</code>
+
+<br />
+<h3>Conditional</h3>
+<p>Evaluate second one in stack and return first one in stack when the evaluation is not 0</p>
+<code>0 ':-( if</code>
+<code>1 ':^) if</code>
+<code>8 0 * 99 if</code>
+<code>[4 9 *] "evaluated" if</code>
+
+<br />
+<h3>Definition</h3>
+<p>Make new <em>word</em> with the first text in the stack as a name and second one as its value<br />
+<em>Words</em> are nothing literal, and things that point certain values</p>
+<code>2014 'year def year year +</code>
+<code bad>'but "you cannot call this again" def you cannot call this again</code>
+<code bad>6 9 def "don't do this too" pop 9</code>
+<code>[dup *] "sq" def 5 sq</code>
+
+<br />
+<h3>Some Built-in Words</h3>
+<code>"duplicate" dup</code>
+<code>'pop 'topmost 'one pop</code>
+
+<br />
+<h3>Awesome Console</h3>
+<p>Note that this entire page shares the same dictionary for <em>words</em></p>
+
+<!--
+
+PEG syntax quick reference
+
+'x'   : match the literal character 'x'
+x+    : match x 1 or more times
+x*    : match x 0 or more times
+x?    : match x 0 or 1 times
+!x    : match anything but the match x
+x/y   : match x or y, trying in that order
+[xyz] : match one of the literal character 'x', 'y', or 'z'
+v:x   : assign the result of the match x to the variable v
+
+Full documentation: http://pegjs.majda.cz/documentation#grammar-syntax-and-semantics-parsing-expression-types
+
+-->

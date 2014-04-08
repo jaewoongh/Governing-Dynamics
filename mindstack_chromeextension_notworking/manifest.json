@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+
+  "name": "Mindstack",
+  "description": "This extension helps you to manage the stack of your mind",
+  "version": "0.10",
+
+  "sandbox": {
+    "pages": ["sandbox.html"]
+  },
+
+  "background": {
+    "persistent": true,
+    "scripts": ["js/mindstack.js", "js/peg.js"]
+  },
+
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  }
+}
